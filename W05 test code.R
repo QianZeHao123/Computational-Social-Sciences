@@ -5,8 +5,8 @@ library(ggplot2)
 library(QCA)
 
 # test dplyr - should produce table
-irisSummary <- iris %>% 
-  group_by(Species) %>% 
+irisSummary <- iris %>%
+  group_by(Species) %>%
   summarise(plants = n())
 irisSummary
 
