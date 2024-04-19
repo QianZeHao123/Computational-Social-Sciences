@@ -19,7 +19,7 @@ It contains data files and original questionnaire.
 
 I download the dataset from this link and put it in "./data" directory.
 
-## 1.1 Read the data from the RData file
+## 1.1 Read the data from the RData and RDS file
 
 ```{r}
 current_directory <- getwd()
@@ -31,6 +31,10 @@ load("./data/WVS_Cross-National_Wave_7_rData_v5_0.rdata")
 
 ```{r}
 data.origin = `WVS_Cross-National_Wave_7_v5_0`
+```
+
+```{r}
+v_dem_2022 = readRDS("./data/2022_CPD_V_Party_R_v2/V-Dem-CPD-Party-V2.rds")
 ```
 
 ```{r}
