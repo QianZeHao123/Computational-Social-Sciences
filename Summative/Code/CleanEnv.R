@@ -5,7 +5,3 @@ rm(list = ls())
 graphics.off()
 # clear the console area
 cat("\014")
-
-
-
-
