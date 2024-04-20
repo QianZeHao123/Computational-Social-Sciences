@@ -58,7 +58,7 @@ print(dim(dem_data))
 ## 3.1 **Summarize the Data**
 
 ```{r}
-summary(dem_data)
+print(summary(dem_data))
 ```
 
 ## 3.2 **Check for Missing Values**
@@ -149,7 +149,6 @@ dem_data_cor = dem_data %>%
   mutate(Social.media.use = str_remove(Social.media.use, "%") %>% 
            as.numeric() %>% 
            `/`(100))
-print(head(dem_data_cor))
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -163,4 +162,56 @@ ggpairs(dem_data_cor[, c("Affective.polarization",
                      "Political.satisfaction",
                      "Perceived.quality.of.democracy")]) +
   theme_bw()
+```
+
+# Appendix 4 Processing with QCA
+
+```{r}
+# install QCA from CRAN
+# install.packages("QCA")
+```
+
+```{r}
+dem_data_new = dem_data %>%
+  mutate(Social.media.use = str_remove(Social.media.use, "%") %>% 
+           as.numeric() %>% 
+           `/`(100),
+         Regime = case_when(
+           Regime == "Full" ~ 1,
+           Regime == "Flawed" ~ 2,
+           # Handles any unexpected categories
+           TRUE ~ NA_real_
+         ))
+```
+
+```{r}
+# ref: Computational Social Science Week 5: QCA Workshop
+library(QCA)
+# Crisp set QCA
+# Calibration discussion
+# -----------------------------------------------------------------
+# histogram example
+sort(dem_data_new$Affective.polarization)
+# -----------------------------------------------------------------
+# simplified histogram in QCA
+Xplot(
+  dem_data_new$Affective.polarization,
+  at = seq(from = 0, to = 4, by = 1),
+  # breaks, can also use 'pretty' function
+  cex = 1.5,
+  pch = 15,
+  # size and shape of markers
+  jitter = TRUE,
+  # vertical jitter to avoid overlap
+  amount = 0.2
+)
+# -----------------------------------------------------------------
+# default clustering for break point
+findTh(
+  dem_data_new$Affective.polarization,
+  n = 1,
+  # number of thresholds, 1 is default but can specify for mvQCA
+  hclustm = "complete",
+  distm = "manhattan"
+)
 ```
