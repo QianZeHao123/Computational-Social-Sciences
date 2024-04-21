@@ -37,6 +37,8 @@ setwd(current_directory)
 # v_dem_2022 = readRDS("./data/2022_CPD_V_Party_R_v2/V-Dem-CPD-Party-V2.rds")
 ```
 
+## 1.2 Steps for Pre-processing
+
 # Appendix 2 Read Democracy Dataset Directly
 
 ```{r}
@@ -171,6 +173,8 @@ ggpairs(dem_data_cor[, c("Affective.polarization",
 # install.packages("QCA")
 ```
 
+## 4.1 Change the format of Social.media.use and Regime
+
 ```{r}
 dem_data_new = dem_data %>%
   mutate(Social.media.use = str_remove(Social.media.use, "%") %>% 
@@ -184,34 +188,248 @@ dem_data_new = dem_data %>%
          ))
 ```
 
-```{r}
+## 4.2 Histogram for Variables  
+
+```{r message=FALSE, warning=FALSE}
 # ref: Computational Social Science Week 5: QCA Workshop
 library(QCA)
+```
+
+```{r}
 # Crisp set QCA
 # Calibration discussion
-# -----------------------------------------------------------------
-# histogram example
-sort(dem_data_new$Affective.polarization)
-# -----------------------------------------------------------------
-# simplified histogram in QCA
+# ------------------------------------------------------------
+# Sorting and printing for each variable
+# example for Printing and sorting for Affective Polarization
+print("Affective Polarization")
+sorted_AffectivePolarization <- sort(dem_data_new$Affective.polarization)
+print(sorted_AffectivePolarization)
+
+# Printing and sorting for Issue Polarization
+print("Issue Polarization")
+sorted_IssuePolarization <- sort(dem_data_new$Issue.polarization)
+print(sorted_IssuePolarization)
+
+# Printing and sorting for Social Media Use
+print("Social Media Use")
+sorted_SocialMediaUse <- sort(dem_data_new$Social.media.use)
+print(sorted_SocialMediaUse)
+
+remove(sorted_AffectivePolarization,
+       sorted_IssuePolarization,
+       sorted_SocialMediaUse)
+```
+
+```{r}
+library(gridExtra)
+# library(patchwork)
+# Assuming dem_data_new is your dataset and variables are formatted as below
+# Create and rename plot objects
+AffectivePolarization <-
+  ggplot(dem_data_new, aes(x = Affective.polarization)) +
+  geom_histogram(binwidth = 1,
+                 fill = "blue",
+                 color = "black") +
+  ggtitle("Affective Polarization")
+
+IssuePolarization <-
+  ggplot(dem_data_new, aes(x = Issue.polarization)) +
+  geom_histogram(binwidth = 1,
+                 fill = "red",
+                 color = "black") +
+  ggtitle("Issue Polarization")
+
+SocialMediaUse <- ggplot(dem_data_new, aes(x = Social.media.use)) +
+  geom_histogram(binwidth = 1,
+                 fill = "green",
+                 color = "black") +
+  ggtitle("Social Media Use")
+
+PoliticalParticipation <-
+  ggplot(dem_data_new, aes(x = Political.participation)) +
+  geom_histogram(binwidth = 1,
+                 fill = "orange",
+                 color = "black") +
+  ggtitle("Political Participation")
+
+VoteHistogram <- ggplot(dem_data_new, aes(x = Vote)) +
+  geom_histogram(binwidth = 1,
+                 fill = "purple",
+                 color = "black") +
+  ggtitle("Vote")
+
+PoliticalSatisfaction <-
+  ggplot(dem_data_new, aes(x = Political.satisfaction)) +
+  geom_histogram(binwidth = 1,
+                 fill = "cyan",
+                 color = "black") +
+  ggtitle("Political Satisfaction")
+
+QualityOfDemocracy <-
+  ggplot(dem_data_new, aes(x = Perceived.quality.of.democracy)) +
+  geom_histogram(binwidth = 1,
+                 fill = "yellow",
+                 color = "black") +
+  ggtitle("Perceived Quality of Democracy")
+# Arrange the plots
+grid.arrange(
+  AffectivePolarization,
+  IssuePolarization,
+  SocialMediaUse,
+  PoliticalParticipation,
+  VoteHistogram,
+  PoliticalSatisfaction,
+  QualityOfDemocracy,
+  ncol = 2,
+  nrow = 4
+)
+remove(
+  AffectivePolarization,
+  IssuePolarization,
+  SocialMediaUse,
+  PoliticalParticipation,
+  VoteHistogram,
+  PoliticalSatisfaction,
+  QualityOfDemocracy
+)
+```
+
+```{r}
+# Set up the plot layout
+# Adjust the numbers as needed to fit all your plots
+par(mfrow = c(4, 2))
+# Now call Xplot for each variable, they will be plotted in the layout
 Xplot(
   dem_data_new$Affective.polarization,
   at = seq(from = 0, to = 4, by = 1),
-  # breaks, can also use 'pretty' function
-  cex = 1.5,
-  pch = 15,
-  # size and shape of markers
-  jitter = TRUE,
-  # vertical jitter to avoid overlap
-  amount = 0.2
 )
-# -----------------------------------------------------------------
-# default clustering for break point
-findTh(
+Xplot(
+  dem_data_new$Issue.polarization,
+  at = seq(from = 0, to = 4, by = 1),
+)
+Xplot(
+  dem_data_new$Social.media.use,
+  at = seq(from = 0.1, to = 0.7, by = 0.05),
+)
+Xplot(
+  dem_data_new$Political.participation,
+  at = seq(from = 0.4, to = 2.7, by = 0.05),
+)
+Xplot(dem_data_new$Vote,
+      at = seq(from = 2.2, to = 3, by = 0.05),
+)
+Xplot(
+  dem_data_new$Political.satisfaction,
+  at = seq(from = 2.5, to = 7, by = 0.1),
+)
+Xplot(
+  dem_data_new$Perceived.quality.of.democracy,
+  at = seq(from = 3.5, to = 8, by = 0.1),
+)
+par(mfrow = c(1, 1))
+```
+
+## 4.3 Auto Calculating the thresholds for Crisp Set
+
+```{r}
+# Auto thresholds
+# Finding threshold for Affective Polarization
+Affective_polarization_Th <- findTh(
   dem_data_new$Affective.polarization,
+  n = 1,  # number of thresholds
+  hclustm = "complete",  # hierarchical clustering method
+  distm = "manhattan"  # distance measure
+)
+
+# Finding threshold for Issue Polarization
+Issue_polarization_Th <- findTh(
+  dem_data_new$Issue.polarization,
   n = 1,
-  # number of thresholds, 1 is default but can specify for mvQCA
   hclustm = "complete",
   distm = "manhattan"
+)
+
+# Finding threshold for Social Media Use
+Social_media_use_Th <- findTh(
+  dem_data_new$Social.media.use,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
+
+# Finding threshold for Political Participation
+Political_participation_Th <- findTh(
+  dem_data_new$Political.participation,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
+
+# Finding threshold for Vote
+Vote_Th <- findTh(
+  dem_data_new$Vote,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
+
+# Finding threshold for Political Satisfaction
+Political_satisfaction_Th <- findTh(
+  dem_data_new$Political.satisfaction,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
+
+# Finding threshold for Perceived Quality of Democracy
+Perceived_quality_of_democracy_Th <- findTh(
+  dem_data_new$Perceived.quality.of.democracy,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
+
+```
+
+```{r}
+# organize thresholds
+thresholds <- data.frame(
+  Variable = c(
+    "Affective Polarization",
+    "Issue Polarization",
+    "Social Media Use",
+    "Political Participation",
+    "Vote",
+    "Political Satisfaction",
+    "Perceived Quality of Democracy"
+  ),
+  Threshold = c(
+    Affective_polarization_Th,
+    Issue_polarization_Th,
+    Social_media_use_Th,
+    Political_participation_Th,
+    Vote_Th,
+    Political_satisfaction_Th,
+    Perceived_quality_of_democracy_Th
+  )
+)
+print(thresholds)
+```
+
+## 4.4 **Calibrate the Data with** thresholds
+
+```{r}
+
+```
+
+```{r}
+remove(
+  Affective_polarization_Th,
+  Issue_polarization_Th,
+  Social_media_use_Th,
+  Political_participation_Th,
+  Vote_Th,
+  Political_satisfaction_Th,
+  Perceived_quality_of_democracy_Th
 )
 ```
