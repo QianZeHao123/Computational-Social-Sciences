@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output: 
   pdf_document: 
     latex_engine: xelatex
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
@@ -225,6 +226,12 @@ library(gridExtra)
 # library(patchwork)
 # Assuming dem_data_new is your dataset and variables are formatted as below
 # Create and rename plot objects
+Regime <-
+  ggplot(dem_data_new, aes(x = Regime)) +
+  geom_histogram(binwidth = 1,
+                 fill = "pink",
+                 color = "black") +
+  ggtitle("Regime")
 AffectivePolarization <-
   ggplot(dem_data_new, aes(x = Affective.polarization)) +
   geom_histogram(binwidth = 1,
@@ -273,6 +280,7 @@ QualityOfDemocracy <-
   ggtitle("Perceived Quality of Democracy")
 # Arrange the plots
 grid.arrange(
+  Regime,
   AffectivePolarization,
   IssuePolarization,
   SocialMediaUse,
@@ -290,7 +298,8 @@ remove(
   PoliticalParticipation,
   VoteHistogram,
   PoliticalSatisfaction,
-  QualityOfDemocracy
+  QualityOfDemocracy,
+  Regime
 )
 ```
 
@@ -299,6 +308,10 @@ remove(
 # Adjust the numbers as needed to fit all your plots
 par(mfrow = c(4, 2))
 # Now call Xplot for each variable, they will be plotted in the layout
+Xplot(
+  dem_data_new$Regime,
+  at = seq(from = 1, to = 2, by = 1),
+)
 Xplot(
   dem_data_new$Affective.polarization,
   at = seq(from = 0, to = 4, by = 1),
@@ -329,10 +342,17 @@ Xplot(
 par(mfrow = c(1, 1))
 ```
 
-## 4.3 Auto Calculating the thresholds for Crisp Set
+## 4.3 Auto Calculating the thresholds for Crisp Set (Init)
 
 ```{r}
 # Auto thresholds
+# Finding threshold for Regime
+Regime_Th <- findTh(
+  dem_data_new$Regime,
+  n = 1,
+  hclustm = "complete",
+  distm = "manhattan"
+)
 # Finding threshold for Affective Polarization
 Affective_polarization_Th <- findTh(
   dem_data_new$Affective.polarization,
@@ -388,13 +408,13 @@ Perceived_quality_of_democracy_Th <- findTh(
   hclustm = "complete",
   distm = "manhattan"
 )
-
 ```
 
 ```{r}
 # organize thresholds
 thresholds <- data.frame(
   Variable = c(
+    "Regime",
     "Affective Polarization",
     "Issue Polarization",
     "Social Media Use",
@@ -404,6 +424,7 @@ thresholds <- data.frame(
     "Perceived Quality of Democracy"
   ),
   Threshold = c(
+    Regime_Th,
     Affective_polarization_Th,
     Issue_polarization_Th,
     Social_media_use_Th,
@@ -414,12 +435,67 @@ thresholds <- data.frame(
   )
 )
 print(thresholds)
+remove(thresholds)
 ```
 
 ## 4.4 **Calibrate the Data with** thresholds
 
 ```{r}
+# Regime
+dem_data_new$Regime_cs = calibrate(
+  dem_data_new$Regime,
+  type = "crisp",
+  thresholds = Regime_Th
+)
+# Affective polarization
+dem_data_new$Affective_polarization_cs = calibrate(
+  dem_data_new$Affective.polarization,
+  type = "crisp",
+  # thresholds = Affective_polarization_Th # 1.5
+  thresholds = 2
+)
+# Issue Polarization
+dem_data_new$Issue_polarization_cs = calibrate(
+  dem_data_new$Issue.polarization,
+  type = "crisp",
+  # thresholds = Issue_polarization_Th # 1.5
+  thresholds = 2
+)
+# Social Media Use
+dem_data_new$Social_media_use_cs = calibrate(
+  dem_data_new$Social.media.use,
+  type = "crisp",
+  # thresholds = Social_media_use_Th # 0.345
+  thresholds = 0.4
+)
+# Political Participation
+dem_data_new$Political_participation_cs = calibrate(
+  dem_data_new$Political.participation,
+  type = "crisp",
+  thresholds = Political_participation_Th
+)
+# Vote
+dem_data_new$Vote_cs = calibrate(
+  dem_data_new$Vote,
+  type = "crisp",
+  # thresholds = Vote_Th # 2.685
+  thresholds = 2.4
+)
 
+# Political Satisfaction
+dem_data_new$Political_satisfaction_cs = calibrate(
+  dem_data_new$Political.satisfaction,
+  type = "crisp",
+  # thresholds = Political_satisfaction_Th # 4.285
+  thresholds = 6.5
+)
+# Perceived Quality of Democracy
+dem_data_new$Perceived_quality_of_democracy_cs = calibrate(
+  dem_data_new$Perceived.quality.of.democracy,
+  type = "crisp",
+  # thresholds = Perceived_quality_of_democracy_Th # 4.45
+  thresholds = 7
+)
 ```
 
 ```{r}
@@ -430,6 +506,71 @@ remove(
   Political_participation_Th,
   Vote_Th,
   Political_satisfaction_Th,
-  Perceived_quality_of_democracy_Th
+  Perceived_quality_of_democracy_Th,
+  Regime_Th
 )
+```
+
+## 4.5 Construct Truth Tables
+
+```{r}
+DemCrisp <- dem_data_new[, c(
+  "Regime_cs",
+  "Affective_polarization_cs",
+  "Issue_polarization_cs",
+  "Social_media_use_cs",
+  "Political_participation_cs",
+  "Vote_cs",
+  "Political_satisfaction_cs",
+  "Perceived_quality_of_democracy_cs"
+)]
+DemCrisp.sim = DemCrisp
+# Assigning new simpler names
+names(DemCrisp.sim) <- c(
+  "Regime",
+  "AffectPol",
+  "IssuePol",
+  "SocialMedia",
+  "PolPart",
+  "Vote",
+  "PolSat",
+  "QualDem"
+)
+```
+
+```{r}
+conditionCounts <- as.data.frame(DemCrisp.sim) %>%
+  mutate(conditions = paste0(Regime,
+                             AffectPol,
+                             IssuePol,
+                             SocialMedia,
+                             PolPart,
+                             Vote,
+                             QualDem
+                             )) %>%
+  group_by(conditions, PolSat) %>%
+  summarise(cases = n())
+print(conditionCounts)
+```
+
+## 4.6 Construct Truth Table with QCA package 
+
+```{r}
+TTDem = truthTable(
+  DemCrisp.sim,
+  outcome = "PolSat",
+  complete = TRUE,
+  show.cases = TRUE
+)
+```
+
+## 4.7 Minimize Truth Tables
+
+```{r}
+complexDemCrisp = minimize(TTDem, details = TRUE)
+complexDemCrisp
+```
+
+```{r}
+
 ```
