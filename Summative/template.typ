@@ -1,7 +1,7 @@
 // The project function defines how your document looks.
 // It takes your content and some metadata and formats it.
 // Go ahead and customize it to your liking!
-#let project(title: "", abstract: [], authors: (), date: none, body) = {
+#let project(title: "",subtitle:"",  abstract: [], authors: (), date: none, body) = {
   // Set the document's basic properties.
   set document(author: authors.map(a => a.name), title: title)
   set page(numbering: "1", number-align: center)
@@ -10,6 +10,11 @@
   // Title row.
   align(center)[
     #block(text(weight: 700, 1.75em, title))
+    #v(1em, weak: true)
+  ]
+  // Subtitle row.
+  align(center)[
+    #block(text(weight: 700, 1.25em, subtitle))
     #v(1em, weak: true)
     #date
   ]
