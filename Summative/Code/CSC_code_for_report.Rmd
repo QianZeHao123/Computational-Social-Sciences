@@ -435,7 +435,7 @@ thresholds <- data.frame(
   )
 )
 print(thresholds)
-remove(thresholds)
+# remove(thresholds)
 ```
 
 ## 4.4 Calibrate the Data with thresholds

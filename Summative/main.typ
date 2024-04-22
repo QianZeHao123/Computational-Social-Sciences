@@ -10,7 +10,7 @@
   authors: ((name: "Z0195806", email: "bjsn39@durham.ac.uk"),),
   // Insert your abstract after the colon, wrapped in brackets.
   // Example: `abstract: [This is my abstract...]`
-  abstract: "This is the abstract of the document.",
+  abstract: "This research brief uses Qualitative Comparative Analysis (QCA) to explore how factors like social media use and political polarization affect political satisfaction in developed democracies. It highlights the importance of voting and the potential drawbacks of excessive social media engagement, offering strategic insights for enhancing democratic health.",
   date: today.display("[month repr:long] [day], [year]"),
 )
 
@@ -41,6 +41,8 @@ Assume that we are a group of researchers in the government think tank. We inves
 = The Social Policy Context in Democracy Satisfaction
 
 The democratic satisfaction of citizens in developed democracies is a multifaceted issue influenced by various factors. Understanding the complex interplay between these factors is crucial for policymakers seeking to enhance democratic satisfaction and governance effectiveness. In this context, I refer to the research of M. Chan in "Social Media Use and Political Engagement in Polarized Times"@SocialMediaUsePoliticalEngagement.
+
+#image("./img/complex.png")
 
 == The Rise of Social Media in Political Action
 
@@ -135,9 +137,13 @@ QCA is a method that allows for the systematic analysis of complex causal relati
 + Select Conditions: Choose the causal conditions that may influence the outcome (Regime, Vote, and etc.).
 + Calibrate Conditions: Assign values to the conditions based on empirical data.
 + Truth Table: Generate a truth table that lists all possible combinations of conditions and outcomes.
-+ Analysis: Use software like fsQCA to analyze the truth table and identify necessary and sufficient conditions for the outcome.
++ Analysis: Use software like QCA package in R to analyze the truth table and identify necessary and sufficient conditions for the outcome.
 
 === Flowchart of QCA Method
+
+For better understanding, I provide a flowchart of the QCA method belowing (I make it with draw.io).
+
+#image("./img/QCA.png")
 
 = Justification of Data and Model Choice
 
@@ -154,5 +160,85 @@ QCA is highly suitable for this research due to several factors:
 - Suitability for QCA: The dataset contains both continuous and categorical data suitable for transformation into the binary or multi-value sets required for QCA analysis.
 - Relevance: The dataset includes variables directly relevant to the research question, such as levels of social media use, affective and issue polarization, political participation, voting behavior, and perceptions of democratic quality.
 - Comprehensiveness: It spans a broad range of developed democracies, providing a diverse context that enhances the generalizability and relevance of the findings.
+
+= Application of QCA Method in Developed Democracies
+
+In this part, I use the QCA package of R language and tidyverse to process the dem data set and perform QCA calculations. And place all codes and running results in the *Appendix 4*. (The appendix is built using Rmarkdown and exported to PDF and attached to the end of this research breif).
+
+== Steps by Steps QCA Analysis
+
+- Step 1: Data Preprocessing: Clean and prepare the Dem-Dataset for QCA analysis. In *Appendix 4.1*, I provide the code for data cleaning and transformation by changing the Social Media Use from percentage number to float and Regime to numeric format.
+- Step 2: Check the histrogram of the data: In *Appendix 4.2*, I provide the code (Xplot) for checking the histrogram of the data. It is a reference to adjust the Calibrate Conditions in the future.
+#image("./img/hist.png")
+- Step 3: Calculate the threshold of the data: In *Appendix 4.3*, Auto Calculating the thresholds for Crisp Set is used with *QCA::findTh* (findTh via clustering method to get the thresholds). The initial thresholds are showing below.
+
+  *Regime*:                           1.500,
+  *Affective Polarization*:           2.000,
+  *Issue Polarization*:               2.000,
+  *Social Media Use*:                 0.400,
+  *Political Participation*:          1.760,
+  *Vote*:                             2.400,
+  *Political Satisfaction*:           6.500,
+  *Perceived Quality of Democracy*:   7.000,
+- Step 4: Generate the Truth Table: In *Appendix 4.4*, the truth table is a matrix that lists all possible combinations of conditions and outcomes.
+- Step 5: Check the Truth Table: If the truth table with the same conditions but different outcomes, it means that the Calculated data is not enough to support the QCA analysis. If so, try to adjust the thresholds and repeat the Step 4 and 5 until the truth table is unique.
+
+== Final Model of QCA
+
+After several iterations of adjusting the thresholds (It takes me about 2 hours to find the thresholds), the final truth table is unique. The final model is shown below:
+
+  *Regime*:                           1.500,
+  *Affective Polarization*:           1.500,
+  *Issue Polarization*:               1.500,
+  *Social Media Use*:                 0.345,
+  *Political Participation*:          1.760,
+  *Vote*:                             2.685,
+  *Political Satisfaction*:           4.285,
+  *Perceived Quality of Democracy*:   4.450,
+
+Then, In *Appendix 4.6* I use the *QCA::truthTable* to generate the final truth table and use the *QCA::minimize* to analyze the truth table. The results are shown in *Appendix 4.7*.
+
+= Conclusions
+
+== The Findings of the QCA results
+
+The causal recipes leading to political satisfaction are as follows (the *QCA::minimize* Output of *Appendix 4.7*):
+
++ *Regime \* AffectPol \* \~IssuePol \* \~SocialMedia \* ~PolPart \* Vote \* \~QualDem*
+  - Regime and AffectPol are present.
+  - IssuePol, SocialMedia, PolPart, and QualDem are absent.
+  - Vote is present.
+  - This configuration suggests that political satisfaction is likely when there is a certain regime type coupled with affective polarization, absence of issue-based polarization, less use of social media, lower political participation outside voting, active voting, and lower perceived quality of democracy.
+  - Covers 50% of the cases with political satisfaction (20 cases).
++ *\~Regime \* AffectPol \* IssuePol \* \~SocialMedia \* \~PolPart \* Vote \* \~QualDem*
+  - Regime is absent, but AffectPol and IssuePol are present.
+  - SocialMedia, PolPart, and QualDem are absent.
+  - Vote is present.
+  - This configuration indicates that political satisfaction can also occur in the absence of a certain regime type when both forms of polarization (affective and issue-based) are present, alongside active voting, with lower usage of social media, lesser non-voting political participation, and lower perceived quality of democracy.
+  - Also covers 50% of the cases with political satisfaction (22 cases).
+
+*Interpretation and Implications*
+
+- Complex Relationships: The presence of polarization (affective and sometimes issue-based) combined with active voting and specific political contexts (related to regime type and perception of democracy) are critical for political satisfaction.
+- Role of Voting: Voting appears as a crucial condition in both configurations, underscoring its significance in contributing to political satisfaction.
+- Influence of Media and Participation: Lesser engagement with social media and political activities beyond voting seems to contribute to political satisfaction, suggesting that over-engagement might have negative impacts or distract from factors that truly drive satisfaction.
+
+*Model Comparison*
+
+In *Appendix 5*, I use multiple models to compare the results of QCA. The results show that the same conlusion as we get from QCA.
+
+== Challenges, Limitations and Management
+
+*Challenges and Limitations*: Using Qualitative Comparative Analysis (QCA) to investigate political engagement through social data involves several challenges and limitations (Even so, it took me a long time to find the unique collection). The calibration of data into sets can be subjective and prone to misclassification, potentially leading to incorrect conclusions about causal relationships. The method also faces issues with limited empirical diversity, where the possible configurations of variables may exceed the number of cases available, resulting in logical remainders without empirical support. Additionally, QCA's sensitivity to case selection can affect the generalizability of the findings, particularly if the selection isn't representative of a broader scenario. Finally, the configurational nature of QCA introduces causal complexity, where multiple combinations of conditions might lead to the same outcome (equifinality), making the interpretation of results particularly challenging for those unfamiliar with such analytical approaches.
+
+*Strategies for Management*: Increasing the diversity of cases can help cover more potential configurations, and transparency in how cases are selected can enhance the representativeness and relevance of the study (when few variables, I find it is too hard to set the thresholds). Furthermore, providing clear explanations of the QCA methodology and its interpretation challenges, supplemented by visual aids like truth tables and Venn diagrams, can aid stakeholders in understanding the results.
+
+== Summary of the Research Brief
+
+This QCA has provided insights into the complex interplay of political behaviors, attitudes, and satisfaction. The findings can inform policymakers and political scientists about the key factors that contribute to or detract from political satisfaction in different political regimes and environments.
+
+*QCA dealing with the Social Complexity by Capturing Complex Causal Relationships*: QCA is designed to handle cases where outcomes are the result of multiple, interacting conditions. This method is particularly adept at identifying how different combinations of factors contribute to a specific result. Unlike traditional methods that often look for average effects of isolated variables, QCA recognizes that the same outcome can arise from different pathways or combinations of factors.
+
+Finally, according to our research, voting consistently emerges as essential, indicating its foundational role in democratic satisfaction. Meanwhile, the findings suggest potential drawbacks of excessive social media engagement and political participation, which might not always enhance satisfaction and could lead to political fatigue. Thus, promoting balanced political discourse and encouraging informed voting are crucial strategies for improving political satisfaction in developed democracies.
 
 #bibliography("references.bib")
